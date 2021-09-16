@@ -58,6 +58,13 @@ test.run(|instance| async move {
 });
 ```
 
+This crate ships with support for various servers already included. See the 
+`servers` module for the ones included. Note that most require a feature flag to
+be enabled to avoid bundling unecessary implementations.
+
+Please feel free to submit a PR with your own implementations to be added to the
+main crate.
+
 ## Testing
 
 Run tests with `cargo test`.
