@@ -38,6 +38,7 @@ The below example brings up a Nginx server and then tests it's responding to
 HTTP requests:
 
 ```rust
+// Note: This requires the `web` feature
 use dockertest_server::servers::web::{NginxServer, NginxServerConfig};
 use dockertest_server::Test;
 
