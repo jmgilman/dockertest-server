@@ -92,6 +92,7 @@ mod tests {
     fn test_nginx() {
         let config = NginxServerConfig::builder()
             .version("1.21.3-alpine")
+            .port(8082 as u32)
             .build()
             .unwrap();
         let mut test = Test::new();
