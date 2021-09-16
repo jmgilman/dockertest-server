@@ -1,6 +1,12 @@
 [package]
 name = "dockertest-server"
 version = "0.1.0"
+authors = ["Joshua Gilman <joshuagilman@gmail.com>"]
+description = "A test framework built around dockertest for testing against server containers."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/dockertest-server/vaultrs-test"
+keywords = ["Test", "Docker", "Suite", "Framework"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,7 +16,6 @@ derive_builder = "0.10.2"
 dockertest = "0.2.1"
 futures = "0.3.17"
 rand = "0.8.4"
-thiserror = "1.0.29"
 type-map = "0.5.0"
 
 [dev-dependencies]

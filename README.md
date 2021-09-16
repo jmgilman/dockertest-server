@@ -12,13 +12,13 @@
     </a>
 </p>
 
-> A test framework built around dockertest for testing against server containers.
+> A test framework built around [dockertest][1] for testing against server containers.
 
 This crate provides a small abstraction layer around the 
-[dockertest](https://crates.io/crates/dockertest) crate for easily running a
-test against multiple servers running in containers. It provides traits for 
-defining a server and it's associated configuration and then registering a 
-variable number of servers to bring up for a test. 
+[dockertest][1] crate for easily running a test against multiple servers running 
+in containers. It provides traits for defining a server and it's associated 
+configuration and then registering a variable number of servers to bring up for 
+a test. 
 
 ## Installation
 
@@ -32,7 +32,7 @@ dockertest-server = "0.1.0"
 
 Run tests with `cargo test`.
 
-Check out the [issues][1] for items neeeding attention or submit your own and 
+Check out the [issues][2] for items neeeding attention or submit your own and 
 then:
 
 1. Fork the repo (https://github.com/jmgilman/dockertest-server/fork)
@@ -41,4 +41,5 @@ then:
 4. Push to the branch (git push origin feature/fooBar)
 5. Create a new Pull Request
 
-[1]: https://github.com/jmgilman/dockertest-server/issues
+[1]: https://crates.io/crates/dockertest
+[2]: https://github.com/jmgilman/dockertest-server/issues
