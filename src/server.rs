@@ -1,3 +1,4 @@
+/// Contains traits and helper functions for creating servers
 use std::collections::HashMap;
 
 use dockertest::{waitfor, Composition, Image, RunningContainer, Source};

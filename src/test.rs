@@ -1,3 +1,4 @@
+/// Contains types for creating tests
 use dockertest::{Composition, DockerOperations, DockerTest};
 use futures::Future;
 use type_map::concurrent::TypeMap;
