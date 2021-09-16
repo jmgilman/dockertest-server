@@ -18,7 +18,11 @@ This crate provides a small abstraction layer around the
 [dockertest][1] crate for easily running a test against multiple servers running 
 in containers. It provides traits for defining a server and it's associated 
 configuration and then registering a variable number of servers to bring up for 
-a test. 
+a test.
+
+The primary use-case of this crate is to provide an easy-to-use testing
+framework for crates that wish to build integration tests against services which
+are able to run in a container.
 
 ## Installation
 
@@ -28,9 +32,36 @@ Add `dockertest-server` as a depdendency to your cargo.toml:
 dockertest-server = "0.1.0"
 ```
 
+## Usage
+
+The below example brings up a Nginx server and then tests it's responding to
+HTTP requests:
+
+```rust
+use dockertest_server::servers::web::{NginxServer, NginxServerConfig};
+use dockertest_server::Test;
+
+let config = NginxServerConfig::builder()
+    .version("1.21.3-alpine")
+    .build()
+    .unwrap();
+let mut test = Test::new();
+test.register(config);
+
+test.run(|instance| async move {
+    let server: NginxServer = instance.server();
+
+    let resp = reqwest::get(server.local_address).await;
+    assert!(resp.is_ok());
+    assert_eq!(resp.unwrap().status(), 200);
+});
+```
+
 ## Testing
 
 Run tests with `cargo test`.
+
+## Contributing
 
 Check out the [issues][2] for items neeeding attention or submit your own and 
 then:

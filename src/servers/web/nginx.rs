@@ -16,7 +16,7 @@ const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
 /// information on the arguments and environment variables that can be used to
 /// configure the server.
 #[derive(Default, Builder)]
-#[builder(default)]
+#[builder(default, setter(into))]
 pub struct NginxServerConfig {
     #[builder(default = "Vec::new()")]
     pub args: Vec<String>,
@@ -90,15 +90,17 @@ mod tests {
 
     #[test]
     fn test_nginx() {
-        let config = NginxServerConfig::builder().build().unwrap();
+        let config = NginxServerConfig::builder()
+            .version("1.21.3-alpine")
+            .build()
+            .unwrap();
         let mut test = Test::new();
         test.register(config);
 
         test.run(|instance| async move {
             let server: NginxServer = instance.server();
 
-            let client = reqwest::Client::new();
-            let resp = client.get(server.local_address).send().await;
+            let resp = reqwest::get(server.local_address).await;
             assert!(resp.is_ok());
             assert_eq!(resp.unwrap().status(), 200);
         });
