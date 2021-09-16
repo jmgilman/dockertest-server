@@ -3,6 +3,9 @@ pub mod server;
 pub mod test;
 pub mod vault;
 
+pub use server::{generate_composition, new_handle, Config, Server};
+pub use test::{Test, TestInstance};
+
 #[cfg(test)]
 mod tests {
 
