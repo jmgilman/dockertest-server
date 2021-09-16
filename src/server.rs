@@ -43,6 +43,7 @@ pub trait Server {
 /// A [Composition] usually consists of a few common configuration properties.
 /// This helper function is intended to provide a common interface to those
 /// properties to assist upstream [Configs][Config] with creating them.
+#[allow(clippy::too_many_arguments)]
 pub fn generate_composition(
     args: Vec<String>,
     env: HashMap<String, String>,
@@ -57,15 +58,13 @@ pub fn generate_composition(
     let image = Image::with_repository(name).source(source).tag(version);
     let mut comp = Composition::with_image(image);
 
-    let wait = if let Some(msg) = wait_msg {
-        Some(Box::new(waitfor::MessageWait {
+    let wait = wait_msg.map(|msg| {
+        Box::new(waitfor::MessageWait {
             message: String::from(msg),
             source: waitfor::MessageSource::Stdout,
-            timeout: timeout,
-        }))
-    } else {
-        None
-    };
+            timeout,
+        })
+    });
 
     if let Some(p) = ports {
         for pair in p {

@@ -67,6 +67,12 @@ impl Test {
     }
 }
 
+impl Default for Test {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Represents a running instance of a [Test].
 ///
 /// Internally, this type keeps track of all [Configs][Config] that were
