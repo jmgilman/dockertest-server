@@ -1,5 +1,5 @@
 use crate::common::rand_string;
-use crate::server::{Config, Server};
+use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{PullPolicy, Source};
 use std::collections::HashMap;
@@ -21,7 +21,7 @@ const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
 /// See the [Dockerhub](https://hub.docker.com/_/vault) page for more
 /// information on the arguments and environment variables that can be used to
 /// configure the server.
-#[derive(Default, Builder)]
+#[derive(Clone, Default, Builder)]
 #[builder(default)]
 pub struct VaultServerConfig {
     #[builder(default = "Vec::new()")]
@@ -47,22 +47,23 @@ impl VaultServerConfig {
 }
 
 impl Config for VaultServerConfig {
-    fn composition(&self) -> dockertest::Composition {
+    fn into_composition(self) -> dockertest::Composition {
         let ports = vec![(PORT, self.port)];
         let mut env = self.env.clone();
         env.insert(String::from("VAULT_DEV_ROOT_TOKEN_ID"), self.token.clone());
 
-        crate::server::generate_composition(
-            self.args.clone(),
-            env,
-            self.handle.as_str(),
-            IMAGE,
-            SOURCE,
-            self.timeout,
-            self.version.as_str(),
-            Some(ports),
-            Some(LOG_MSG),
-        )
+        ContainerConfig {
+            args: self.args,
+            env: env,
+            handle: self.handle,
+            name: IMAGE.into(),
+            source: SOURCE,
+            timeout: self.timeout,
+            version: self.version,
+            ports: Some(ports),
+            wait_msg: Some(LOG_MSG.into()),
+        }
+        .into()
     }
 
     fn handle(&self) -> &str {

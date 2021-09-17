@@ -36,8 +36,8 @@ impl Test {
     /// [Config] passed will have it's respective [Server] created before the
     /// test body is ran.
     pub fn register(&mut self, config: impl Config + 'static) {
-        self.compositions.push(config.composition());
-        self.configs.insert(config);
+        self.configs.insert(config.clone());
+        self.compositions.push(config.into_composition());
     }
 
     /// Brings up the [Servers][Server] registered with this test and then

@@ -13,8 +13,8 @@ use dockertest::{waitfor, Composition, Image, RunningContainer, Source};
 /// configuration options.
 ///
 /// See also [Test][crate::test::Test].
-pub trait Config: Send + Sync {
-    fn composition(&self) -> Composition;
+pub trait Config: Clone + Send + Sync {
+    fn into_composition(self) -> Composition;
     fn handle(&self) -> &str;
 }
 
@@ -38,50 +38,57 @@ pub trait Server {
     fn new(config: &Self::Config, container: &RunningContainer) -> Self;
 }
 
-/// A helper function for generating [Compositions][Composition].
+/// A helper struct for creating [Compositions][Composition] from a set of
+/// common configuration parameters.
 ///
-/// A [Composition] usually consists of a few common configuration properties.
-/// This helper function is intended to provide a common interface to those
-/// properties to assist upstream [Configs][Config] with creating them.
-#[allow(clippy::too_many_arguments)]
-pub fn generate_composition(
-    args: Vec<String>,
-    env: HashMap<String, String>,
-    handle: &str,
-    name: &str,
-    source: Source,
-    timeout: u16,
-    version: &str,
-    ports: Option<Vec<(u32, u32)>>,
-    wait_msg: Option<&str>,
-) -> Composition {
-    let image = Image::with_repository(name).source(source).tag(version);
-    let mut comp = Composition::with_image(image);
+/// This type can be freely cast into a [Composition]. It is only intended for
+/// basic use-cases where limited control over how the [Composition] is
+/// configured is acceptable.
+pub struct ContainerConfig {
+    pub args: Vec<String>,
+    pub env: HashMap<String, String>,
+    pub handle: String,
+    pub name: String,
+    pub source: Source,
+    pub timeout: u16,
+    pub version: String,
+    pub ports: Option<Vec<(u32, u32)>>,
+    pub wait_msg: Option<String>,
+}
 
-    let wait = wait_msg.map(|msg| {
-        Box::new(waitfor::MessageWait {
-            message: String::from(msg),
-            source: waitfor::MessageSource::Stdout,
-            timeout,
-        })
-    });
+impl Into<Composition> for ContainerConfig {
+    fn into(self) -> Composition {
+        let image = Image::with_repository(self.name)
+            .source(self.source)
+            .tag(self.version);
+        let mut comp = Composition::with_image(image);
 
-    if let Some(p) = ports {
-        for pair in p {
-            comp.port_map(pair.0, pair.1);
+        let timeout = self.timeout;
+        let wait = self.wait_msg.map(move |msg| {
+            Box::new(waitfor::MessageWait {
+                message: String::from(msg),
+                source: waitfor::MessageSource::Stdout,
+                timeout,
+            })
+        });
+
+        if let Some(p) = self.ports {
+            for pair in p {
+                comp.port_map(pair.0, pair.1);
+            }
+        };
+
+        match wait {
+            Some(w) => comp
+                .with_cmd(self.args)
+                .with_env(self.env)
+                .with_wait_for(w)
+                .with_container_name(self.handle),
+            None => comp
+                .with_cmd(self.args)
+                .with_env(self.env)
+                .with_container_name(self.handle),
         }
-    };
-
-    match wait {
-        Some(w) => comp
-            .with_cmd(args)
-            .with_env(env)
-            .with_wait_for(w)
-            .with_container_name(handle),
-        None => comp
-            .with_cmd(args)
-            .with_env(env)
-            .with_container_name(handle),
     }
 }
 
