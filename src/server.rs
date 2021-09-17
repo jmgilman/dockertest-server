@@ -56,6 +56,7 @@ pub struct ContainerConfig {
     pub wait_msg: Option<String>,
 }
 
+#[allow(clippy::from_over_into)] // Only supports one-way casting
 impl Into<Composition> for ContainerConfig {
     fn into(self) -> Composition {
         let image = Image::with_repository(self.name)
@@ -66,7 +67,7 @@ impl Into<Composition> for ContainerConfig {
         let timeout = self.timeout;
         let wait = self.wait_msg.map(move |msg| {
             Box::new(waitfor::MessageWait {
-                message: String::from(msg),
+                message: msg,
                 source: waitfor::MessageSource::Stdout,
                 timeout,
             })

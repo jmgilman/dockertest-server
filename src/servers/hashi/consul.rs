@@ -4,33 +4,30 @@ use derive_builder::Builder;
 use dockertest::{PullPolicy, Source};
 use std::collections::HashMap;
 
-const IMAGE: &str = "vault";
-const PORT: u32 = 8200;
-const LOG_MSG: &str = "Development mode should NOT be used in production installations!";
+const IMAGE: &str = "consul";
+const PORT: u32 = 8500;
+const LOG_MSG: &str = "Synced node info";
 const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
 
-/// Configuration for creating a Hashicorp Vault server.
+/// Configuration for creating a Hashicorp Consul server.
 ///
-/// A token with root permisions will automatically be generated using the
-/// `token` field. If it's omitted the token will automatically be generated.
-///
-/// By default the Vault server listens on port 8200 for HTTP requests. This
+/// By default the Consul server listens on port 8500 for HTTP requests. This
 /// is exposed on the container by default, but the exposed port can be
 /// controlled by setting the `port` field.
 ///
-/// See the [Dockerhub](https://hub.docker.com/_/vault) page for more
+/// See the [Dockerhub](https://hub.docker.com/_/consul) page for more
 /// information on the arguments and environment variables that can be used to
 /// configure the server.
 #[derive(Clone, Default, Builder)]
 #[builder(default)]
-pub struct VaultServerConfig {
+pub struct ConsulServerConfig {
     #[builder(default = "Vec::new()")]
     pub args: Vec<String>,
     #[builder(default = "HashMap::new()")]
     pub env: HashMap<String, String>,
     #[builder(default = "crate::server::new_handle(IMAGE)")]
     pub handle: String,
-    #[builder(default = "8200")]
+    #[builder(default = "9500")]
     pub port: u32,
     #[builder(default = "15")]
     pub timeout: u16,
@@ -40,21 +37,19 @@ pub struct VaultServerConfig {
     pub version: String,
 }
 
-impl VaultServerConfig {
-    pub fn builder() -> VaultServerConfigBuilder {
-        VaultServerConfigBuilder::default()
+impl ConsulServerConfig {
+    pub fn builder() -> ConsulServerConfigBuilder {
+        ConsulServerConfigBuilder::default()
     }
 }
 
-impl Config for VaultServerConfig {
+impl Config for ConsulServerConfig {
     fn into_composition(self) -> dockertest::Composition {
         let ports = vec![(PORT, self.port)];
-        let mut env = self.env.clone();
-        env.insert(String::from("VAULT_DEV_ROOT_TOKEN_ID"), self.token.clone());
 
         ContainerConfig {
             args: self.args,
-            env,
+            env: self.env,
             handle: self.handle,
             name: IMAGE.into(),
             source: SOURCE,
@@ -71,28 +66,25 @@ impl Config for VaultServerConfig {
     }
 }
 
-/// A running instane of a Vault server.
+/// A running instane of a Consul server.
 ///
-/// The `token` field contains the root Vault token for the server. The server
-/// URL which is accessible from the local host can be found in `local_address`.
-/// Other running containers which need access to this server should use the
-/// `address` field instead.
-pub struct VaultServer {
+/// The server URL which is accessible from the local host can be found in
+/// `local_address`. Other running containers which need access to this server
+/// should use the `address` field instead.
+pub struct ConsulServer {
     pub address: String,
     pub local_address: String,
     pub port: u32,
-    pub token: String,
 }
 
-impl Server for VaultServer {
-    type Config = VaultServerConfig;
+impl Server for ConsulServer {
+    type Config = ConsulServerConfig;
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
-        VaultServer {
+        ConsulServer {
             address: format!("http://{}:{}", container.ip(), config.port),
             local_address: format!("http://localhost:{}", config.port),
             port: config.port,
-            token: config.token.clone(),
         }
     }
 }
@@ -100,28 +92,24 @@ impl Server for VaultServer {
 #[cfg(test)]
 mod tests {
 
-    use super::{VaultServer, VaultServerConfig};
+    use super::{ConsulServer, ConsulServerConfig};
     use crate::Test;
 
     #[test]
-    fn test_vault() {
-        let config = VaultServerConfig::builder()
+    fn test_consul() {
+        let config = ConsulServerConfig::builder()
             .port(8300)
-            .version("1.8.2".into())
+            .version("1.9.9".into())
             .build()
             .unwrap();
         let mut test = Test::new();
         test.register(config);
 
         test.run(|instance| async move {
-            let server: VaultServer = instance.server();
+            let server: ConsulServer = instance.server();
 
             let client = reqwest::Client::new();
-            let resp = client
-                .get(format!("{}/v1/auth/token/lookup", server.local_address))
-                .header("X-Vault-Token", server.token)
-                .send()
-                .await;
+            let resp = client.get(server.local_address).send().await;
             assert!(resp.is_ok());
             assert_eq!(resp.unwrap().status(), 200);
         });
