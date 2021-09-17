@@ -69,8 +69,9 @@ impl Config for OIDCServerConfig {
 /// should use the `address` field instead.
 pub struct OIDCServer {
     pub address: String,
+    pub external_port: u32,
+    pub internal_port: u32,
     pub local_address: String,
-    pub port: u32,
 }
 
 impl Server for OIDCServer {
@@ -78,9 +79,10 @@ impl Server for OIDCServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         OIDCServer {
-            address: format!("http://{}:{}", container.ip(), config.port),
+            address: format!("http://{}:{}", container.ip(), PORT),
+            external_port: config.port,
+            internal_port: PORT,
             local_address: format!("http://localhost:{}", config.port),
-            port: config.port,
         }
     }
 }
@@ -93,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_oidc() {
-        let config = OIDCServerConfig::builder().port(8090).build().unwrap();
+        let config = OIDCServerConfig::builder().port(9080).build().unwrap();
         let mut test = Test::new();
         test.register(config);
 

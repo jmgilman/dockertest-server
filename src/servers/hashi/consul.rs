@@ -73,8 +73,9 @@ impl Config for ConsulServerConfig {
 /// should use the `address` field instead.
 pub struct ConsulServer {
     pub address: String,
+    pub external_port: u32,
+    pub internal_port: u32,
     pub local_address: String,
-    pub port: u32,
 }
 
 impl Server for ConsulServer {
@@ -82,9 +83,10 @@ impl Server for ConsulServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         ConsulServer {
-            address: format!("http://{}:{}", container.ip(), config.port),
+            address: format!("http://{}:{}", container.ip(), PORT),
+            external_port: config.port,
+            internal_port: PORT,
             local_address: format!("http://localhost:{}", config.port),
-            port: config.port,
         }
     }
 }
@@ -98,7 +100,7 @@ mod tests {
     #[test]
     fn test_consul() {
         let config = ConsulServerConfig::builder()
-            .port(8300)
+            .port(9500)
             .version("1.9.9".into())
             .build()
             .unwrap();

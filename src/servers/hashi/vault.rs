@@ -79,8 +79,9 @@ impl Config for VaultServerConfig {
 /// `address` field instead.
 pub struct VaultServer {
     pub address: String,
+    pub external_port: u32,
+    pub internal_port: u32,
     pub local_address: String,
-    pub port: u32,
     pub token: String,
 }
 
@@ -89,9 +90,10 @@ impl Server for VaultServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         VaultServer {
-            address: format!("http://{}:{}", container.ip(), config.port),
+            address: format!("http://{}:{}", container.ip(), PORT),
+            external_port: config.port,
+            internal_port: PORT,
             local_address: format!("http://localhost:{}", config.port),
-            port: config.port,
             token: config.token.clone(),
         }
     }
@@ -106,7 +108,7 @@ mod tests {
     #[test]
     fn test_vault() {
         let config = VaultServerConfig::builder()
-            .port(8300)
+            .port(9200)
             .version("1.8.2".into())
             .build()
             .unwrap();
