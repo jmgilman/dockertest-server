@@ -92,18 +92,22 @@ impl ConsulServer {
         format!("http://{}", self.format_address(host, port))
     }
 
+    /// The external address in the form of localhost::{port}
     pub fn external_address(&self) -> String {
         self.format_address("localhost", self.external_port)
     }
 
+    /// The external HTTP address
     pub fn external_url(&self) -> String {
         self.format_url("localhost", self.external_port)
     }
 
+    /// The container internal address in the form of {ip}:{port}
     pub fn internal_address(&self) -> String {
         self.format_address(self.ip.as_str(), self.internal_port)
     }
 
+    /// The internal HTTP address
     pub fn internal_url(&self) -> String {
         self.format_url(self.ip.as_str(), self.internal_port)
     }
