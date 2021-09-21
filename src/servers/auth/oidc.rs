@@ -1,6 +1,6 @@
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{PullPolicy, Source};
+use dockertest::{waitfor, PullPolicy, Source};
 use std::collections::HashMap;
 
 const IMAGE: &str = "ghcr.io/navikt/mock-oauth2-server";
@@ -43,16 +43,23 @@ impl OIDCServerConfig {
 impl Config for OIDCServerConfig {
     fn into_composition(self) -> dockertest::Composition {
         let ports = vec![(PORT, self.port)];
+
+        let timeout = self.timeout;
+        let wait = Box::new(waitfor::MessageWait {
+            message: LOG_MSG.into(),
+            source: waitfor::MessageSource::Stdout,
+            timeout,
+        });
+
         ContainerConfig {
             args: self.args,
             env: self.env,
             handle: self.handle,
             name: IMAGE.into(),
             source: SOURCE,
-            timeout: self.timeout,
             version: self.version,
             ports: Some(ports),
-            wait_msg: Some(LOG_MSG.into()),
+            wait: Some(wait),
         }
         .into()
     }

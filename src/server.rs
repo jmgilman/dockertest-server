@@ -1,7 +1,7 @@
 /// Contains traits and helper functions for creating servers
 use std::collections::HashMap;
 
-use dockertest::{waitfor, Composition, Image, RunningContainer, Source};
+use dockertest::{waitfor::WaitFor, Composition, Image, RunningContainer, Source};
 
 /// A configuration capable of configuring a [Server].
 ///
@@ -50,10 +50,9 @@ pub struct ContainerConfig {
     pub handle: String,
     pub name: String,
     pub source: Source,
-    pub timeout: u16,
     pub version: String,
     pub ports: Option<Vec<(u32, u32)>>,
-    pub wait_msg: Option<String>,
+    pub wait: Option<Box<dyn WaitFor>>,
 }
 
 #[allow(clippy::from_over_into)] // Only supports one-way casting
@@ -64,22 +63,13 @@ impl Into<Composition> for ContainerConfig {
             .tag(self.version);
         let mut comp = Composition::with_image(image);
 
-        let timeout = self.timeout;
-        let wait = self.wait_msg.map(move |msg| {
-            Box::new(waitfor::MessageWait {
-                message: msg,
-                source: waitfor::MessageSource::Stdout,
-                timeout,
-            })
-        });
-
         if let Some(p) = self.ports {
             for pair in p {
                 comp.port_map(pair.0, pair.1);
             }
         };
 
-        match wait {
+        match self.wait {
             Some(w) => comp
                 .with_cmd(self.args)
                 .with_env(self.env)
