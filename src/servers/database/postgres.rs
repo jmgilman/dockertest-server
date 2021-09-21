@@ -98,7 +98,7 @@ impl PostgresServer {
         format!("{}:{}", host, port)
     }
 
-    fn format_url(&self, host: &str, port: u32) -> String {
+    fn format_auth_url(&self, host: &str, port: u32) -> String {
         format!(
             "postgresql://{}:{}@{}",
             self.username,
@@ -107,18 +107,36 @@ impl PostgresServer {
         )
     }
 
+    fn format_url(&self, host: &str, port: u32) -> String {
+        format!("postgresql://{}", self.format_address(host, port))
+    }
+
+    /// The external address in the form of localhost:{port}
     pub fn external_address(&self) -> String {
         self.format_address("localhost", self.external_port)
     }
 
+    /// The external libpq URL with the username/password embedded in the URL
+    pub fn external_auth_url(&self) -> String {
+        self.format_auth_url("localhost", self.external_port)
+    }
+
+    /// The external libpq URL
     pub fn external_url(&self) -> String {
         self.format_url("localhost", self.external_port)
     }
 
+    /// The container internal address in the form of {ip}:{port}
     pub fn internal_address(&self) -> String {
         self.format_address(self.ip.as_str(), self.internal_port)
     }
 
+    /// The internal libpq URL with the username/password embedded in the URL
+    pub fn internal_auth_url(&self) -> String {
+        self.format_auth_url(self.ip.as_str(), self.internal_port)
+    }
+
+    /// The internal libpq URL
     pub fn internal_url(&self) -> String {
         self.format_url(self.ip.as_str(), self.internal_port)
     }
@@ -155,7 +173,7 @@ mod tests {
 
         test.run(|instance| async move {
             let server: PostgresServer = instance.server();
-            let res = tokio_postgres::connect(server.external_url().as_str(), NoTls).await;
+            let res = tokio_postgres::connect(server.external_auth_url().as_str(), NoTls).await;
             assert!(res.is_ok())
         });
     }
