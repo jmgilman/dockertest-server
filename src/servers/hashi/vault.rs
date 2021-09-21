@@ -11,7 +11,7 @@ const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
 
 /// Configuration for creating a Hashicorp Vault server.
 ///
-/// A token with root permisions will automatically be generated using the
+/// A token with root permissions will automatically be generated using the
 /// `token` field. If it's omitted the token will automatically be generated.
 ///
 /// By default the Vault server listens on port 8200 for HTTP requests. This
@@ -77,7 +77,7 @@ impl Config for VaultServerConfig {
     }
 }
 
-/// A running instane of a Vault server.
+/// A running instance of a Vault server.
 ///
 /// The `token` field contains the root Vault token for the server. The server
 /// URL which is accessible from the local host can be found in `local_address`.
