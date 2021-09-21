@@ -28,7 +28,7 @@
 //! ```rust
 //! // Note: This requires the `web` feature
 //! use dockertest_server::servers::auth::{OIDCServer, OIDCServerConfig};
-//! use dockertest_server::Test;
+//! use dockertest_server::{ConnectionType, Test};
 //!
 //! let config = OIDCServerConfig::builder().port(8090).build().unwrap();
 //! let mut test = Test::new();
@@ -41,7 +41,7 @@
 //!     let resp = client
 //!         .get(format!(
 //!             "{}/default/.well-known/openid-configuration",
-//!             server.local_address
+//!             server.url(ConnectionType::EXTERNAL)
 //!         ))
 //!         .send()
 //!         .await;
@@ -68,5 +68,6 @@ pub mod server;
 pub mod servers;
 pub mod test;
 
+pub use common::ConnectionType;
 pub use server::{new_handle, Config, ContainerConfig, Server};
 pub use test::{Test, TestInstance};

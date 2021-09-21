@@ -1,4 +1,4 @@
-use crate::common::rand_string;
+use crate::common::{rand_string, ConnectionType};
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{waitfor, PullPolicy, Source};
@@ -86,12 +86,29 @@ impl Config for PostgresServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct PostgresServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
     pub password: String,
     pub username: String,
+}
+
+impl PostgresServer {
+    pub fn address(&self, conn: ConnectionType) -> String {
+        match conn {
+            ConnectionType::EXTERNAL => format!("{}:{}", "localhost", self.external_port),
+            ConnectionType::INTERNAL => format!("{}:{}", self.ip, self.internal_port),
+        }
+    }
+
+    pub fn url(&self, conn: ConnectionType) -> String {
+        format!(
+            "postgresql://{}:{}@{}",
+            self.username,
+            self.password,
+            self.address(conn)
+        )
+    }
 }
 
 impl Server for PostgresServer {
@@ -99,19 +116,9 @@ impl Server for PostgresServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         PostgresServer {
-            address: format!(
-                "postgresql://{}:{}@{}:{}",
-                USER,
-                config.password,
-                container.ip(),
-                PORT
-            ),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!(
-                "postgresql://{}:{}@localhost:{}",
-                USER, config.password, config.port,
-            ),
+            ip: container.ip().to_string(),
             password: config.password.clone(),
             username: USER.to_string(),
         }
@@ -121,7 +128,7 @@ impl Server for PostgresServer {
 #[cfg(test)]
 mod tests {
     use super::{PostgresServer, PostgresServerConfig};
-    use crate::Test;
+    use crate::{common::ConnectionType, Test};
     use test_env_log::test;
     use tokio_postgres::NoTls;
 
@@ -133,7 +140,8 @@ mod tests {
 
         test.run(|instance| async move {
             let server: PostgresServer = instance.server();
-            let res = tokio_postgres::connect(server.local_address.as_str(), NoTls).await;
+            let res =
+                tokio_postgres::connect(server.url(ConnectionType::EXTERNAL).as_str(), NoTls).await;
             assert!(res.is_ok())
         });
     }

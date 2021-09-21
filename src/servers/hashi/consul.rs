@@ -1,4 +1,4 @@
-use crate::common::rand_string;
+use crate::common::{rand_string, ConnectionType};
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{waitfor, PullPolicy, Source};
@@ -78,10 +78,22 @@ impl Config for ConsulServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct ConsulServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
+}
+
+impl ConsulServer {
+    pub fn address(&self, conn: ConnectionType) -> String {
+        match conn {
+            ConnectionType::EXTERNAL => format!("{}:{}", "localhost", self.external_port),
+            ConnectionType::INTERNAL => format!("{}:{}", self.ip, self.internal_port),
+        }
+    }
+
+    pub fn url(&self, conn: ConnectionType) -> String {
+        format!("http://{}", self.address(conn))
+    }
 }
 
 impl Server for ConsulServer {
@@ -89,10 +101,9 @@ impl Server for ConsulServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         ConsulServer {
-            address: format!("http://{}:{}", container.ip(), PORT),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!("http://localhost:{}", config.port),
+            ip: container.ip().to_string(),
         }
     }
 }
@@ -101,7 +112,7 @@ impl Server for ConsulServer {
 mod tests {
 
     use super::{ConsulServer, ConsulServerConfig};
-    use crate::Test;
+    use crate::{common::ConnectionType, Test};
 
     #[test]
     fn test_consul() {
@@ -117,7 +128,10 @@ mod tests {
             let server: ConsulServer = instance.server();
 
             let client = reqwest::Client::new();
-            let resp = client.get(server.local_address).send().await;
+            let resp = client
+                .get(server.url(ConnectionType::EXTERNAL))
+                .send()
+                .await;
             assert!(resp.is_ok());
             assert_eq!(resp.unwrap().status(), 200);
         });

@@ -1,4 +1,4 @@
-use crate::{Config, ContainerConfig, Server};
+use crate::{common::ConnectionType, Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{waitfor, PullPolicy, Source};
 use std::collections::HashMap;
@@ -75,10 +75,22 @@ impl Config for OIDCServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct OIDCServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
+}
+
+impl OIDCServer {
+    pub fn address(&self, conn: ConnectionType) -> String {
+        match conn {
+            ConnectionType::EXTERNAL => format!("{}:{}", "localhost", self.external_port),
+            ConnectionType::INTERNAL => format!("{}:{}", self.ip, self.internal_port),
+        }
+    }
+
+    pub fn url(&self, conn: ConnectionType) -> String {
+        format!("http://{}", self.address(conn))
+    }
 }
 
 impl Server for OIDCServer {
@@ -86,10 +98,9 @@ impl Server for OIDCServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         OIDCServer {
-            address: format!("http://{}:{}", container.ip(), PORT),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!("http://localhost:{}", config.port),
+            ip: container.ip().to_string(),
         }
     }
 }
@@ -97,7 +108,7 @@ impl Server for OIDCServer {
 #[cfg(test)]
 mod tests {
     use super::{OIDCServer, OIDCServerConfig};
-    use crate::Test;
+    use crate::{common::ConnectionType, Test};
     use test_env_log::test;
 
     #[test]
@@ -113,7 +124,7 @@ mod tests {
             let resp = client
                 .get(format!(
                     "{}/default/.well-known/openid-configuration",
-                    server.local_address
+                    server.url(ConnectionType::EXTERNAL)
                 ))
                 .send()
                 .await;
