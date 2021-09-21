@@ -128,9 +128,11 @@ mod tests {
     use crate::Test;
     use test_env_log::test;
 
+    const PORT: u32 = 9080;
+
     #[test]
     fn test_oidc() {
-        let config = OIDCServerConfig::builder().port(9080).build().unwrap();
+        let config = OIDCServerConfig::builder().port(PORT).build().unwrap();
         let mut test = Test::new();
         test.register(config);
 

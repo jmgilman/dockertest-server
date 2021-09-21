@@ -131,10 +131,12 @@ mod tests {
     use super::{ConsulServer, ConsulServerConfig};
     use crate::Test;
 
+    const PORT: u32 = 9500;
+
     #[test]
     fn test_consul() {
         let config = ConsulServerConfig::builder()
-            .port(9500)
+            .port(PORT)
             .version("1.9.9".into())
             .build()
             .unwrap();

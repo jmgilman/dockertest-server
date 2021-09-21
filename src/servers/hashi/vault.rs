@@ -139,10 +139,12 @@ mod tests {
     use super::{VaultServer, VaultServerConfig};
     use crate::Test;
 
+    const PORT: u32 = 9200;
+
     #[test]
     fn test_vault() {
         let config = VaultServerConfig::builder()
-            .port(9200)
+            .port(PORT)
             .version("1.8.2".into())
             .build()
             .unwrap();
