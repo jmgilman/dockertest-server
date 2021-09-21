@@ -1,4 +1,4 @@
-use crate::common::{rand_string, ConnectionType};
+use crate::common::rand_string;
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{waitfor, PullPolicy, Source};
@@ -84,15 +84,28 @@ pub struct ConsulServer {
 }
 
 impl ConsulServer {
-    pub fn address(&self, conn: ConnectionType) -> String {
-        match conn {
-            ConnectionType::EXTERNAL => format!("{}:{}", "localhost", self.external_port),
-            ConnectionType::INTERNAL => format!("{}:{}", self.ip, self.internal_port),
-        }
+    fn format_address(&self, host: &str, port: u32) -> String {
+        format!("{}:{}", host, port)
     }
 
-    pub fn url(&self, conn: ConnectionType) -> String {
-        format!("http://{}", self.address(conn))
+    fn format_url(&self, host: &str, port: u32) -> String {
+        format!("http://{}", self.format_address(host, port))
+    }
+
+    pub fn external_address(&self) -> String {
+        self.format_address("localhost", self.external_port)
+    }
+
+    pub fn external_url(&self) -> String {
+        self.format_url("localhost", self.external_port)
+    }
+
+    pub fn internal_address(&self) -> String {
+        self.format_address(self.ip.as_str(), self.internal_port)
+    }
+
+    pub fn internal_url(&self) -> String {
+        self.format_url(self.ip.as_str(), self.internal_port)
     }
 }
 
@@ -112,7 +125,7 @@ impl Server for ConsulServer {
 mod tests {
 
     use super::{ConsulServer, ConsulServerConfig};
-    use crate::{common::ConnectionType, Test};
+    use crate::Test;
 
     #[test]
     fn test_consul() {
@@ -128,10 +141,7 @@ mod tests {
             let server: ConsulServer = instance.server();
 
             let client = reqwest::Client::new();
-            let resp = client
-                .get(server.url(ConnectionType::EXTERNAL))
-                .send()
-                .await;
+            let resp = client.get(server.external_url()).send().await;
             assert!(resp.is_ok());
             assert_eq!(resp.unwrap().status(), 200);
         });

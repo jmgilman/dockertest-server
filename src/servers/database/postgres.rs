@@ -1,4 +1,4 @@
-use crate::common::{rand_string, ConnectionType};
+use crate::common::rand_string;
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
 use dockertest::{waitfor, PullPolicy, Source};
@@ -94,20 +94,33 @@ pub struct PostgresServer {
 }
 
 impl PostgresServer {
-    pub fn address(&self, conn: ConnectionType) -> String {
-        match conn {
-            ConnectionType::EXTERNAL => format!("{}:{}", "localhost", self.external_port),
-            ConnectionType::INTERNAL => format!("{}:{}", self.ip, self.internal_port),
-        }
+    fn format_address(&self, host: &str, port: u32) -> String {
+        format!("{}:{}", host, port)
     }
 
-    pub fn url(&self, conn: ConnectionType) -> String {
+    fn format_url(&self, host: &str, port: u32) -> String {
         format!(
             "postgresql://{}:{}@{}",
             self.username,
             self.password,
-            self.address(conn)
+            self.format_address(host, port)
         )
+    }
+
+    pub fn external_address(&self) -> String {
+        self.format_address("localhost", self.external_port)
+    }
+
+    pub fn external_url(&self) -> String {
+        self.format_url("localhost", self.external_port)
+    }
+
+    pub fn internal_address(&self) -> String {
+        self.format_address(self.ip.as_str(), self.internal_port)
+    }
+
+    pub fn internal_url(&self) -> String {
+        self.format_url(self.ip.as_str(), self.internal_port)
     }
 }
 
@@ -128,20 +141,21 @@ impl Server for PostgresServer {
 #[cfg(test)]
 mod tests {
     use super::{PostgresServer, PostgresServerConfig};
-    use crate::{common::ConnectionType, Test};
+    use crate::Test;
     use test_env_log::test;
     use tokio_postgres::NoTls;
 
+    const PORT: u32 = 6432;
+
     #[test]
     fn test_postgres() {
-        let config = PostgresServerConfig::builder().port(6432).build().unwrap();
+        let config = PostgresServerConfig::builder().port(PORT).build().unwrap();
         let mut test = Test::new();
         test.register(config);
 
         test.run(|instance| async move {
             let server: PostgresServer = instance.server();
-            let res =
-                tokio_postgres::connect(server.url(ConnectionType::EXTERNAL).as_str(), NoTls).await;
+            let res = tokio_postgres::connect(server.external_url().as_str(), NoTls).await;
             assert!(res.is_ok())
         });
     }

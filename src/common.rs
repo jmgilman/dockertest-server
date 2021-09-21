@@ -2,11 +2,6 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::iter;
 
-pub enum ConnectionType {
-    EXTERNAL,
-    INTERNAL,
-}
-
 /// Generates a random string of characters of the given length.
 pub fn rand_string(length: usize) -> String {
     let mut rng = thread_rng();
