@@ -75,10 +75,39 @@ impl Config for OIDCServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct OIDCServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
+}
+
+impl OIDCServer {
+    fn format_address(&self, host: &str, port: u32) -> String {
+        format!("{}:{}", host, port)
+    }
+
+    fn format_url(&self, host: &str, port: u32) -> String {
+        format!("http://{}", self.format_address(host, port))
+    }
+
+    /// The external address in the form of localhost:{port}
+    pub fn external_address(&self) -> String {
+        self.format_address("localhost", self.external_port)
+    }
+
+    /// The external HTTP address
+    pub fn external_url(&self) -> String {
+        self.format_url("localhost", self.external_port)
+    }
+
+    /// The container internal address in the form of {ip}:{port}
+    pub fn internal_address(&self) -> String {
+        self.format_address(self.ip.as_str(), self.internal_port)
+    }
+
+    /// The internal HTTP address
+    pub fn internal_url(&self) -> String {
+        self.format_url(self.ip.as_str(), self.internal_port)
+    }
 }
 
 impl Server for OIDCServer {
@@ -86,10 +115,9 @@ impl Server for OIDCServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         OIDCServer {
-            address: format!("http://{}:{}", container.ip(), PORT),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!("http://localhost:{}", config.port),
+            ip: container.ip().to_string(),
         }
     }
 }
@@ -100,9 +128,11 @@ mod tests {
     use crate::Test;
     use test_env_log::test;
 
+    const PORT: u32 = 9080;
+
     #[test]
     fn test_oidc() {
-        let config = OIDCServerConfig::builder().port(9080).build().unwrap();
+        let config = OIDCServerConfig::builder().port(PORT).build().unwrap();
         let mut test = Test::new();
         test.register(config);
 
@@ -113,7 +143,7 @@ mod tests {
             let resp = client
                 .get(format!(
                     "{}/default/.well-known/openid-configuration",
-                    server.local_address
+                    server.external_url()
                 ))
                 .send()
                 .await;

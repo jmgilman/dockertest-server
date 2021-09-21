@@ -86,12 +86,60 @@ impl Config for PostgresServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct PostgresServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
     pub password: String,
     pub username: String,
+}
+
+impl PostgresServer {
+    fn format_address(&self, host: &str, port: u32) -> String {
+        format!("{}:{}", host, port)
+    }
+
+    fn format_auth_url(&self, host: &str, port: u32) -> String {
+        format!(
+            "postgresql://{}:{}@{}",
+            self.username,
+            self.password,
+            self.format_address(host, port)
+        )
+    }
+
+    fn format_url(&self, host: &str, port: u32) -> String {
+        format!("postgresql://{}", self.format_address(host, port))
+    }
+
+    /// The external address in the form of localhost:{port}
+    pub fn external_address(&self) -> String {
+        self.format_address("localhost", self.external_port)
+    }
+
+    /// The external libpq URL with the username/password embedded in the URL
+    pub fn external_auth_url(&self) -> String {
+        self.format_auth_url("localhost", self.external_port)
+    }
+
+    /// The external libpq URL
+    pub fn external_url(&self) -> String {
+        self.format_url("localhost", self.external_port)
+    }
+
+    /// The container internal address in the form of {ip}:{port}
+    pub fn internal_address(&self) -> String {
+        self.format_address(self.ip.as_str(), self.internal_port)
+    }
+
+    /// The internal libpq URL with the username/password embedded in the URL
+    pub fn internal_auth_url(&self) -> String {
+        self.format_auth_url(self.ip.as_str(), self.internal_port)
+    }
+
+    /// The internal libpq URL
+    pub fn internal_url(&self) -> String {
+        self.format_url(self.ip.as_str(), self.internal_port)
+    }
 }
 
 impl Server for PostgresServer {
@@ -99,19 +147,9 @@ impl Server for PostgresServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         PostgresServer {
-            address: format!(
-                "postgresql://{}:{}@{}:{}",
-                USER,
-                config.password,
-                container.ip(),
-                PORT
-            ),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!(
-                "postgresql://{}:{}@localhost:{}",
-                USER, config.password, config.port,
-            ),
+            ip: container.ip().to_string(),
             password: config.password.clone(),
             username: USER.to_string(),
         }
@@ -125,15 +163,17 @@ mod tests {
     use test_env_log::test;
     use tokio_postgres::NoTls;
 
+    const PORT: u32 = 6432;
+
     #[test]
     fn test_postgres() {
-        let config = PostgresServerConfig::builder().port(6432).build().unwrap();
+        let config = PostgresServerConfig::builder().port(PORT).build().unwrap();
         let mut test = Test::new();
         test.register(config);
 
         test.run(|instance| async move {
             let server: PostgresServer = instance.server();
-            let res = tokio_postgres::connect(server.local_address.as_str(), NoTls).await;
+            let res = tokio_postgres::connect(server.external_auth_url().as_str(), NoTls).await;
             assert!(res.is_ok())
         });
     }

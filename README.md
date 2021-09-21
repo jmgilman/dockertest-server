@@ -53,7 +53,7 @@ test.run(|instance| async move {
     let resp = client
         .get(format!(
             "{}/default/.well-known/openid-configuration",
-            server.local_address
+            server.external_url()
         ))
         .send()
         .await;

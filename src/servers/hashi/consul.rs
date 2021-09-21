@@ -78,10 +78,39 @@ impl Config for ConsulServerConfig {
 /// `local_address`. Other running containers which need access to this server
 /// should use the `address` field instead.
 pub struct ConsulServer {
-    pub address: String,
     pub external_port: u32,
     pub internal_port: u32,
-    pub local_address: String,
+    pub ip: String,
+}
+
+impl ConsulServer {
+    fn format_address(&self, host: &str, port: u32) -> String {
+        format!("{}:{}", host, port)
+    }
+
+    fn format_url(&self, host: &str, port: u32) -> String {
+        format!("http://{}", self.format_address(host, port))
+    }
+
+    /// The external address in the form of localhost::{port}
+    pub fn external_address(&self) -> String {
+        self.format_address("localhost", self.external_port)
+    }
+
+    /// The external HTTP address
+    pub fn external_url(&self) -> String {
+        self.format_url("localhost", self.external_port)
+    }
+
+    /// The container internal address in the form of {ip}:{port}
+    pub fn internal_address(&self) -> String {
+        self.format_address(self.ip.as_str(), self.internal_port)
+    }
+
+    /// The internal HTTP address
+    pub fn internal_url(&self) -> String {
+        self.format_url(self.ip.as_str(), self.internal_port)
+    }
 }
 
 impl Server for ConsulServer {
@@ -89,10 +118,9 @@ impl Server for ConsulServer {
 
     fn new(config: &Self::Config, container: &dockertest::RunningContainer) -> Self {
         ConsulServer {
-            address: format!("http://{}:{}", container.ip(), PORT),
             external_port: config.port,
             internal_port: PORT,
-            local_address: format!("http://localhost:{}", config.port),
+            ip: container.ip().to_string(),
         }
     }
 }
@@ -103,10 +131,12 @@ mod tests {
     use super::{ConsulServer, ConsulServerConfig};
     use crate::Test;
 
+    const PORT: u32 = 9500;
+
     #[test]
     fn test_consul() {
         let config = ConsulServerConfig::builder()
-            .port(9500)
+            .port(PORT)
             .version("1.9.9".into())
             .build()
             .unwrap();
@@ -117,7 +147,7 @@ mod tests {
             let server: ConsulServer = instance.server();
 
             let client = reqwest::Client::new();
-            let resp = client.get(server.local_address).send().await;
+            let resp = client.get(server.external_url()).send().await;
             assert!(resp.is_ok());
             assert_eq!(resp.unwrap().status(), 200);
         });
