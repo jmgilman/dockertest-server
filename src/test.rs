@@ -13,7 +13,7 @@ use crate::server::{Config, Server};
 /// given test body.
 ///
 /// The body of a test is determined by an async closure passed to the `run`
-/// method. The closure will receieve a [TestInstance] which can be used to
+/// method. The closure will receive a [TestInstance] which can be used to
 /// access the [Servers][Server] that were created when the test was setup.
 pub struct Test {
     pub configs: TypeMap,
@@ -45,7 +45,7 @@ impl Test {
     ///
     /// The test body receives a [TestInstance] which can be used for accessing
     /// any configured [Servers][Server] through the `server` method.
-    /// The test body is gauranteed to not execute until all configured
+    /// The test body is guaranteed to not execute until all configured
     /// [Servers][Server] are verified to be running and available. The scope of
     /// the test body determines the life of the [Servers][Server]: they are
     /// created before the closure is run and destroyed after the closure exits.

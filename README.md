@@ -26,7 +26,7 @@ are able to run in a container.
 
 ## Installation
 
-Add `dockertest-server` as a depdendency to your cargo.toml:
+Add `dockertest-server` as a dependency to your cargo.toml:
 ```
 [dev-dependencies]
 dockertest-server = "0.1.0"
@@ -64,7 +64,7 @@ test.run(|instance| async move {
 
 This crate ships with support for various servers already included. See the 
 `servers` module for the ones included. Note that most require a feature flag to
-be enabled to avoid bundling unecessary implementations.
+be enabled to avoid bundling unnecessary implementations.
 
 Please feel free to submit a PR with your own implementations to be added to the
 main crate.
@@ -75,7 +75,7 @@ Run tests with `cargo test`.
 
 ## Contributing
 
-Check out the [issues][2] for items neeeding attention or submit your own and 
+Check out the [issues][2] for items needing attention or submit your own and 
 then:
 
 1. Fork the repo (https://github.com/jmgilman/dockertest-server/fork)

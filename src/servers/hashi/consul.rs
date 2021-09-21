@@ -72,7 +72,7 @@ impl Config for ConsulServerConfig {
     }
 }
 
-/// A running instane of a Consul server.
+/// A running instance of a Consul server.
 ///
 /// The server URL which is accessible from the local host can be found in
 /// `local_address`. Other running containers which need access to this server
