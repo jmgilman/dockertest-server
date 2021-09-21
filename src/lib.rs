@@ -17,7 +17,7 @@
 //! Add `dockertest-server` as a dependency to your cargo.toml:
 //! ```ignore
 //! [dev-dependencies]
-//! dockertest-server = "0.1.2"
+//! dockertest-server = "0.1.3"
 //! ```
 //!
 //! ## Usage

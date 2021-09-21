@@ -1,6 +1,6 @@
 [package]
 name = "dockertest-server"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Joshua Gilman <joshuagilman@gmail.com>"]
 description = "A test framework built around dockertest for testing against server containers."
 license = "MIT"
