@@ -1,7 +1,7 @@
 use crate::common::rand_string;
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{PullPolicy, Source};
+use dockertest::{waitfor, PullPolicy, Source};
 use std::collections::HashMap;
 
 const IMAGE: &str = "vault";
@@ -52,16 +52,22 @@ impl Config for VaultServerConfig {
         let mut env = self.env.clone();
         env.insert(String::from("VAULT_DEV_ROOT_TOKEN_ID"), self.token.clone());
 
+        let timeout = self.timeout;
+        let wait = Box::new(waitfor::MessageWait {
+            message: LOG_MSG.into(),
+            source: waitfor::MessageSource::Stdout,
+            timeout,
+        });
+
         ContainerConfig {
             args: self.args,
             env,
             handle: self.handle,
             name: IMAGE.into(),
             source: SOURCE,
-            timeout: self.timeout,
             version: self.version,
             ports: Some(ports),
-            wait_msg: Some(LOG_MSG.into()),
+            wait: Some(wait),
         }
         .into()
     }
