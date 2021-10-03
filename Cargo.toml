@@ -5,7 +5,7 @@ authors = ["Joshua Gilman <joshuagilman@gmail.com>"]
 description = "A test framework built around dockertest for testing against server containers."
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/dockertest-server/vaultrs-test"
+repository = "https://github.com/jmgilman/dockertest-server"
 keywords = ["Test", "Docker", "Suite", "Framework"]
 edition = "2018"
 
