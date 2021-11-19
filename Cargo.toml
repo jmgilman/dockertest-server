@@ -1,6 +1,6 @@
 [package]
 name = "dockertest-server"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Joshua Gilman <joshuagilman@gmail.com>"]
 description = "A test framework built around dockertest for testing against server containers."
 license = "MIT"
@@ -26,8 +26,8 @@ type-map = "0.5.0"
 
 [dev-dependencies]
 env_logger = "0.9.0"
-reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11.6", default-features = false, features = ["rustls-tls"] }
 test-env-log = { version = "0.2.7", features = ["trace"] }
-tokio-postgres = "0.7.2"
-tracing = {version = "0.1.27", features = ["log"] }
-tracing-subscriber = {version = "0.2.17", default-features = false, features = ["env-filter", "fmt"]}
+tokio-postgres = "0.7.5"
+tracing = { version = "0.1.29", features = ["log"] }
+tracing-subscriber = { version = "0.3.1", default-features = false, features = ["env-filter", "fmt"] }
