@@ -15,6 +15,7 @@ edition = "2018"
 auth = []
 database = []
 hashi = []
+cloud = []
 
 [dependencies]
 derive_builder = "0.10.2"
