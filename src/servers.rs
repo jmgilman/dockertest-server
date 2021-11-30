@@ -5,3 +5,5 @@ pub mod auth;
 pub mod database;
 #[cfg(feature = "hashi")]
 pub mod hashi;
+#[cfg(feature = "webserver")]
+pub mod webserver;
