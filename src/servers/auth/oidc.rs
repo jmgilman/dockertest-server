@@ -60,6 +60,7 @@ impl Config for OIDCServerConfig {
             version: self.version,
             ports: Some(ports),
             wait: Some(wait),
+            bind_mounts: HashMap::new(),
         }
         .into()
     }

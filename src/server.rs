@@ -53,6 +53,7 @@ pub struct ContainerConfig {
     pub version: String,
     pub ports: Option<Vec<(u32, u32)>>,
     pub wait: Option<Box<dyn WaitFor>>,
+    pub bind_mounts: HashMap<String, String>
 }
 
 #[allow(clippy::from_over_into)] // Only supports one-way casting
@@ -69,7 +70,7 @@ impl Into<Composition> for ContainerConfig {
             }
         };
 
-        match self.wait {
+        let mut composition = match self.wait {
             Some(w) => comp
                 .with_cmd(self.args)
                 .with_env(self.env)
@@ -79,7 +80,12 @@ impl Into<Composition> for ContainerConfig {
                 .with_cmd(self.args)
                 .with_env(self.env)
                 .with_container_name(self.handle),
+        };
+
+        for (container_path, host_path) in &self.bind_mounts {
+            composition.bind_mount(host_path, container_path);
         }
+        composition
     }
 }
 
