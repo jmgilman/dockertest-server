@@ -10,17 +10,20 @@ const PORT: u32 = 8888;
 const LOG_MSG: &str = "start worker process";
 const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
 
+use std::fs::Permissions;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
 #[derive(Clone, Default, Builder)]
 #[builder(default)]
 pub struct WebserverContent {
-    #[builder(default = "String::from(\"text/html\")")]
+    #[builder(default = "String::new()", setter(into))]
+    pub name: String,
+    #[builder(default = "String::from(\"text/html\")", setter(into))]
     pub content_type: String,
     #[builder(default = "Vec::new()")]
     pub content: Vec<u8>,
-    #[builder(default = "String::new()")]
+    #[builder(default = "String::new()", setter(into))]
     pub serve_path: String,
 }
 
@@ -32,10 +35,7 @@ impl WebserverContent {
 
 }
 
-pub struct ManagedContent {
-    pub config: TempPath,
-    pub content: TempPath,
-}
+pub type ManagedContent = Vec<TempPath>;
 
 #[derive(Debug)]
 pub enum ContentError {
@@ -47,6 +47,12 @@ impl std::convert::From<std::io::Error> for ContentError {
     fn from(inner: std::io::Error) -> ContentError {
         ContentError::IO(inner)
     }
+}
+
+#[derive(Clone)]
+pub struct TlsConfig {
+    cert_path: String,
+    key_path: String,
 }
 
 #[derive(Clone, Default, Builder)]
@@ -66,11 +72,30 @@ pub struct NginxServerConfig {
     pub version: String,
     #[builder(default = "HashMap::new()")]
     pub bind_mounts: HashMap<String, String>,
+    #[builder(default)]
+    pub tls: Option<TlsConfig>,
 }
 
 impl NginxServerConfig {
     pub fn builder() -> NginxServerConfigBuilder {
         NginxServerConfigBuilder::default()
+    }
+
+    pub fn tls_from_ca_bytes(&mut self, cert: &[u8], key: &[u8]) -> Result<ManagedContent, ContentError> {
+        let mut content = Vec::new();
+
+        content.push(self.tempfile_mount("ca", ".crt", cert, "/srv/ca.crt")?);
+        content.push(self.tempfile_mount("ca", ".key", key, "/srv/ca.key")?);
+        content.push(self.tempfile_mount("csr", ".cnf", include_bytes!("./openssl-csr.cnf"), "/srv/openssl-csr.cnf")?);
+        content.push(self.tempfile_mount("signing", ".cnf", include_bytes!("./openssl-signing.cnf"), "/srv/openssl-signing.cnf")?);
+        content.push(self.tempfile_mount_executable("certgenerate", ".sh", include_bytes!("./generate-cert.sh"), "/docker-entrypoint.d/40-generate-cert.sh")?);
+
+        self.tls = Some(TlsConfig{
+            cert_path: "/srv/webserver.crt".to_string(),
+            key_path: "/srv/webserver.key".to_string(),
+        });
+
+        Ok(content)
     }
 
     pub fn add_mount(&mut self, local_path: &str, remote_path: &str) {
@@ -101,49 +126,78 @@ impl NginxServerConfig {
         //always shadow the upstream image default site when adding custom content
         self.shadow_upstream_default_site();
 
-        let mut tempfile = tempfile::Builder::new()
-            .prefix("content")
-            .rand_bytes(10)
-            .tempfile()?;
+        let remote_path = format!("/usr/share/nginx/html/{}", &content.name);
+        let temp_path = self.tempfile_mount(&content.name, "content", &content.content, &remote_path)?;
 
-        let (local_path, tempfile_base) = Self::tempfile_name_parts(&tempfile)?;
-        let remote_path = format!("/usr/share/nginx/html/{}", &tempfile_base);
-    
-        tempfile.write_all(&content.content)?;
-        self.add_mount(&local_path, &remote_path);
-        
-        let temp_path = tempfile.into_temp_path();
-        
-        {
-            // this has be done for content to be readable by the webserver
-            #[cfg(unix)]
-            std::fs::set_permissions(&temp_path, std::fs::Permissions::from_mode(0o644))?;
-        }
+        let optional_tls_config = match &self.tls {
+            Some(c) => format!(r#"ssl default_server;
+                    server_name localhost;
+                    ssl_certificate     {cert};
+                    ssl_certificate_key {key};
+                "#, cert=&c.cert_path, key=&c.key_path),
+            None => "default_server;\n".to_string(),
+        };
 
         let config = self.add_config(&format!(r#"
             server {{
-                listen {port} default_server;
+                listen {port} {tls_config}
                 location ={location} {{
                     default_type {content_type};
                     alias {alias};
                 }}
+
+                # hack to allow all http methods on static resources
+                error_page  405     =200 $uri;
             }}
         "#,
             port=PORT,
             location=&content.serve_path,
             content_type=&content.content_type,
-            alias=&remote_path
+            alias=&remote_path,
+            tls_config=&optional_tls_config
         ))?.into_temp_path();
 
-        Ok(ManagedContent{
-            config: config,
-            content: temp_path,
-        })
+        Ok(vec!(config, temp_path))
     }
 
     // idempotent since bind mounts are key'ed by their target path
     pub fn shadow_upstream_default_site(&mut self) {
         self.add_config_file("default.conf", "/dev/null");
+    }
+
+    fn tempfile_mount(&mut self, prefix: &str, suffix: &str, content: &[u8], target_path: &str) -> Result<TempPath, ContentError> {
+        self.tempfile_mount_with_perms(
+            prefix,
+            suffix,
+            content,
+            target_path,
+            std::fs::Permissions::from_mode(0o644)
+        )
+    }
+
+    fn tempfile_mount_executable(&mut self, prefix: &str, suffix: &str, content: &[u8], target_path: &str) -> Result<TempPath, ContentError> {
+        self.tempfile_mount_with_perms(
+            prefix,
+            suffix,
+            content,
+            target_path,
+            std::fs::Permissions::from_mode(0o755)
+        )
+    }
+
+    fn tempfile_mount_with_perms(&mut self, prefix: &str, suffix: &str, content: &[u8], target_path: &str, permissions: Permissions) -> Result<TempPath, ContentError> {
+        let mut file = tempfile::Builder::new()
+            .prefix(prefix)
+            .suffix(suffix)
+            .rand_bytes(10)
+            .tempfile()?;
+
+        file.write_all(content)?;
+
+        #[cfg(unix)]
+        std::fs::set_permissions(&file, permissions)?;
+        self.add_mount(file.path().to_str().ok_or(ContentError::MalformedPath)?, target_path);
+        Ok(file.into_temp_path())
     }
 
     fn tempfile_name_parts(file: &NamedTempFile) -> Result<(String, String), ContentError> {
@@ -198,6 +252,7 @@ pub struct NginxServer {
     pub external_port: u32,
     pub internal_port: u32,
     pub ip: String,
+    pub with_tls: bool,
 }
 
 impl NginxServer {
@@ -206,7 +261,12 @@ impl NginxServer {
     }
 
     fn format_url(&self, host: &str, port: u32) -> String {
-        format!("http://{}", self.format_address(host, port))
+        let scheme = if self.with_tls {
+            "https"
+        } else {
+            "http"
+        };
+        format!("{scheme}://{address}", scheme=scheme, address=self.format_address(host, port))
     }
 
     /// The external address in the form of localhost:{port}
@@ -214,7 +274,6 @@ impl NginxServer {
         self.format_address("localhost", self.external_port)
     }
 
-    /// The external libpq URL
     pub fn external_url(&self) -> String {
         self.format_url("localhost", self.external_port)
     }
@@ -224,7 +283,6 @@ impl NginxServer {
         self.format_address(self.ip.as_str(), self.internal_port)
     }
 
-    /// The internal libpq URL
     pub fn internal_url(&self) -> String {
         self.format_url(self.ip.as_str(), self.internal_port)
     }
@@ -238,6 +296,7 @@ impl Server for NginxServer {
             external_port: config.port,
             internal_port: PORT,
             ip: container.ip().to_string(),
+            with_tls: config.tls.is_some(),
         }
     }
 }
@@ -247,13 +306,12 @@ mod tests {
     use super::{NginxServer, NginxServerConfig, WebserverContent};
     use crate::Test;
     use test_env_log::test;
-
-    const PORT: u32 = 8888;
+    use reqwest::Certificate;
 
     #[test]
     fn test_basic() {
         let mut config = NginxServerConfig::builder()
-            .port(PORT)
+            .port(8888)
             .build()
             .unwrap();
 
@@ -261,9 +319,10 @@ mod tests {
 
         let _hello_world = config.add_web_content(
             WebserverContent::builder()
+                .name("hello")
                 .content(payload.as_bytes().to_vec())
-                .content_type("application/json".to_string())
-                .serve_path("/hello".to_string())
+                .content_type("application/json")
+                .serve_path("/hello")
                 .build()
                 .unwrap()
         ).unwrap();
@@ -285,6 +344,56 @@ mod tests {
                 .text()
                 .await.unwrap();
         
+            assert_eq!(&resp, &payload);
+        });
+    }
+
+    #[test]
+    fn test_tls() {
+
+        let mut config = NginxServerConfig::builder()
+            .port(8443)
+            .build()
+            .unwrap();
+
+        let _certs = config.tls_from_ca_bytes(
+            include_bytes!("./ca.crt"),
+            include_bytes!("./ca.key")
+        ).unwrap();
+
+        let payload = r#"{"hello": "world!"}"#.to_string();
+
+        let _hello_world = config.add_web_content(
+            WebserverContent::builder()
+                .name("hello")
+                .content(payload.as_bytes().to_vec())
+                .content_type("application/json")
+                .serve_path("/hello")
+                .build()
+                .unwrap()
+        ).unwrap();
+
+        let mut test = Test::new();
+        test.register(config);
+
+        test.run(|instance| async move {
+            let server: NginxServer = instance.server();
+
+            let client = reqwest::Client::builder()
+                .add_root_certificate(Certificate::from_pem(include_bytes!("./ca.crt")).unwrap())
+                .build()
+                .unwrap();
+
+            let resp = client
+                .post(format!(
+                    "{}/hello",
+                    server.external_url()
+                ))
+                .send()
+                .await.unwrap()
+                .text()
+                .await.unwrap();
+
             assert_eq!(&resp, &payload);
         });
     }
