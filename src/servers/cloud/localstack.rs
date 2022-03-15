@@ -59,6 +59,7 @@ impl Config for LocalStackServerConfig {
             version: self.version,
             ports: Some(ports),
             wait: Some(wait),
+            bind_mounts: HashMap::new(),
         }
         .into()
     }
