@@ -127,7 +127,7 @@ impl Server for OIDCServer {
 mod tests {
     use super::{OIDCServer, OIDCServerConfig};
     use crate::Test;
-    use test_env_log::test;
+    use test_log::test;
 
     const PORT: u32 = 9080;
 

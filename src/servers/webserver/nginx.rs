@@ -356,7 +356,7 @@ mod tests {
     use super::{NginxServer, NginxServerConfig, WebserverContent};
     use crate::Test;
     use reqwest::Certificate;
-    use test_env_log::test;
+    use test_log::test;
 
     #[test]
     fn test_basic() {

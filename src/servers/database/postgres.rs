@@ -161,7 +161,7 @@ impl Server for PostgresServer {
 mod tests {
     use super::{PostgresServer, PostgresServerConfig};
     use crate::Test;
-    use test_env_log::test;
+    use test_log::test;
     use tokio_postgres::NoTls;
 
     const PORT: u32 = 6432;
