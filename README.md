@@ -14,10 +14,10 @@
 
 > A test framework built around [dockertest][1] for testing against server containers.
 
-This crate provides a small abstraction layer around the 
-[dockertest][1] crate for easily running a test against multiple servers running 
-in containers. It provides traits for defining a server and it's associated 
-configuration and then registering a variable number of servers to bring up for 
+This crate provides a small abstraction layer around the
+[dockertest][1] crate for easily running a test against multiple servers running
+in containers. It provides traits for defining a server and it's associated
+configuration and then registering a variable number of servers to bring up for
 a test.
 
 The primary use-case of this crate is to provide an easy-to-use testing
@@ -27,14 +27,15 @@ are able to run in a container.
 ## Installation
 
 Add `dockertest-server` as a dependency to your cargo.toml:
-```
+
+```toml
 [dev-dependencies]
-dockertest-server = "0.1.4"
+dockertest-server = "0.1.6"
 ```
 
 ## Usage
 
-The below example brings up a mock OAuth server and then tests it's responding 
+The below example brings up a mock OAuth server and then tests it's responding
 to HTTP requests:
 
 ```rust
@@ -62,7 +63,7 @@ test.run(|instance| async move {
 });
 ```
 
-This crate ships with support for various servers already included. See the 
+This crate ships with support for various servers already included. See the
 `servers` module for the ones included. Note that most require a feature flag to
 be enabled to avoid bundling unnecessary implementations.
 
@@ -75,10 +76,10 @@ Run tests with `cargo test`.
 
 ## Contributing
 
-Check out the [issues][2] for items needing attention or submit your own and 
+Check out the [issues][2] for items needing attention or submit your own and
 then:
 
-1. Fork the repo (https://github.com/jmgilman/dockertest-server/fork)
+1. Fork the repo (<https://github.com/jmgilman/dockertest-server/fork>)
 2. Create your feature branch (git checkout -b feature/fooBar)
 3. Commit your changes (git commit -am 'Add some fooBar')
 4. Push to the branch (git push origin feature/fooBar)
