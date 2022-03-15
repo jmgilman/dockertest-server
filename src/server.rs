@@ -53,7 +53,7 @@ pub struct ContainerConfig {
     pub version: String,
     pub ports: Option<Vec<(u32, u32)>>,
     pub wait: Option<Box<dyn WaitFor>>,
-    pub bind_mounts: HashMap<String, String>
+    pub bind_mounts: HashMap<String, String>,
 }
 
 #[allow(clippy::from_over_into)] // Only supports one-way casting
