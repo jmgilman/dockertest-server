@@ -16,7 +16,7 @@ x509_extensions = ca_extensions # The extensions to add to the cert
 email_in_dn     = no            # Don't concat the email in the DN
 copy_extensions = copy          # Required to copy SANs from CSR to cert
 
-certificate   = ca.crt            # The CA certifcate
+certificate   = ca.crt            # The CA certificate
 private_key   = ca.key            # The CA private key
 new_certs_dir = .                 # Location for new certs after signing
 database      = ca-db.txt         # Database index file
