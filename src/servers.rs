@@ -7,3 +7,5 @@ pub mod cloud;
 pub mod database;
 #[cfg(feature = "hashi")]
 pub mod hashi;
+#[cfg(feature = "webserver")]
+pub mod webserver;
