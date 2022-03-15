@@ -123,7 +123,7 @@ mod tests {
     use super::{LocalStackServer, LocalStackServerConfig};
     use crate::Test;
     use std::collections::HashMap;
-    use test_env_log::test;
+    use test_log::test;
 
     #[test]
     fn test_local_stack() {
