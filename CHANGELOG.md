@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2021-09-30
+
+### Added
+- Support for localstack
+
+### Changed
+- Updated dependencies to latest versions
+
 ## [0.1.4] - 2021-09-30
 
 ### Added
@@ -32,8 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 
-[unreleased]: https://github.com/jmgilman/dockertest-server/compare/v0.1.4...HEAD
-[0.1.4]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.3
+[unreleased]: https://github.com/jmgilman/dockertest-server/compare/v0.1.5...HEAD
+[0.1.4]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.5
+[0.1.4]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.4
 [0.1.3]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.3
 [0.1.2]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.2
 [0.1.1]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.1
