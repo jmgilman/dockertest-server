@@ -1,12 +1,12 @@
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{waitfor, PullPolicy, Source};
+use dockertest::{waitfor, Source};
 use std::collections::HashMap;
 
 const IMAGE: &str = "ghcr.io/navikt/mock-oauth2-server";
 const PORT: u32 = 8080;
 const LOG_MSG: &str = "started server on address";
-const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
+const SOURCE: Source = Source::DockerHub;
 
 /// Configuration for creating a mock OAuth (OIDC) server.
 ///

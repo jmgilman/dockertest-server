@@ -1,13 +1,13 @@
 use crate::common::rand_string;
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{waitfor, PullPolicy, Source};
+use dockertest::{waitfor, Source};
 use std::collections::HashMap;
 
 const IMAGE: &str = "postgres";
 const PORT: u32 = 5432;
 const LOG_MSG: &str = "database system is ready to accept connections";
-const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
+const SOURCE: Source = Source::DockerHub;
 const USER: &str = "postgres";
 
 /// Configuration for creating a PostgreSQL server.

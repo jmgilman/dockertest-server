@@ -1,13 +1,13 @@
 use crate::common::rand_string;
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{waitfor, PullPolicy, Source};
+use dockertest::{waitfor, Source};
 use std::collections::HashMap;
 
 const IMAGE: &str = "consul";
 const PORT: u32 = 8500;
 const LOG_MSG: &str = "Synced node info";
-const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
+const SOURCE: Source = Source::DockerHub;
 
 /// Configuration for creating a Hashicorp Consul server.
 ///

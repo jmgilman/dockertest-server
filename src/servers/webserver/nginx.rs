@@ -1,6 +1,6 @@
 use crate::{Config, ContainerConfig, Server};
 use derive_builder::Builder;
-use dockertest::{waitfor, PullPolicy, Source};
+use dockertest::{waitfor, Source};
 use std::collections::HashMap;
 use std::io::Write;
 use tempfile::{NamedTempFile, TempPath};
@@ -8,7 +8,7 @@ use tempfile::{NamedTempFile, TempPath};
 const IMAGE: &str = "nginx";
 const PORT: u32 = 8888;
 const LOG_MSG: &str = "start worker process";
-const SOURCE: Source = Source::DockerHub(PullPolicy::IfNotPresent);
+const SOURCE: Source = Source::DockerHub;
 
 use std::fs::Permissions;
 #[cfg(unix)]
