@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2023-10-07
+
+### Changed
+
+- Replaces DockerHub source from deprecated "vault" to "hashicorp/vault"
+
 ## [0.1.7] - 2022-05-13
 
 ### Changed
@@ -63,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
-[unreleased]: https://github.com/jmgilman/dockertest-server/compare/v0.1.7...HEAD
+[unreleased]: https://github.com/jmgilman/dockertest-server/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.8
 [0.1.7]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.7
 [0.1.6]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.6
 [0.1.5]: https://github.com/jmgilman/dockertest-server/releases/tag/v0.1.5

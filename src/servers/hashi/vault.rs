@@ -4,7 +4,7 @@ use derive_builder::Builder;
 use dockertest::{waitfor, Source};
 use std::collections::HashMap;
 
-const IMAGE: &str = "vault";
+const IMAGE: &str = "hashicorp/vault";
 const PORT: u32 = 8200;
 const LOG_MSG: &str = "Development mode should NOT be used in production installations!";
 const SOURCE: Source = Source::DockerHub;
