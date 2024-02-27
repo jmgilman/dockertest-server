@@ -38,6 +38,8 @@ pub struct VaultServerConfig {
     pub token: String,
     #[builder(default = "String::from(\"latest\")")]
     pub version: String,
+    #[builder(default = "HashMap::new()")]
+    pub bind_mounts: HashMap<String, String>,
 }
 
 impl VaultServerConfig {
@@ -68,7 +70,7 @@ impl Config for VaultServerConfig {
             version: self.version,
             ports: Some(ports),
             wait: Some(wait),
-            bind_mounts: HashMap::new(),
+            bind_mounts: self.bind_mounts,
         }
         .into()
     }
